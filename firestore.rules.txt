@@ -1,0 +1,118 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* 🔐 HELPER FUNCTIONS */
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/staff/$(request.auth.uid)).data.role;
+    }
+
+    function isAdmin() {
+      return getUserRole() == "admin";
+    }
+
+    function isWorker() {
+      return getUserRole() == "worker";
+    }
+
+    function isKitchen() {
+      return getUserRole() == "kitchen";
+    }
+
+    function isBarman() {
+      return getUserRole() == "barman";
+    }
+
+    function isFinance() {
+      return getUserRole() == "finance";
+    }
+
+    /* ===================== */
+    /* 📦 ORDERS COLLECTION */
+    /* ===================== */
+    match /orders/{orderId} {
+
+      // anyone logged in can read (filtered in UI)
+      allow read: if isAuth();
+
+      // only worker can create
+      allow create: if isWorker();
+
+      // only kitchen/barman can update based on type
+      allow update: if isAuth() && (
+        (isKitchen() && resource.data.type == "food") ||
+        (isBarman() && resource.data.type == "drink")
+      );
+
+      // no delete
+      allow delete: if false;
+    }
+
+    /* ===================== */
+    /* 💰 BILLING */
+    /* ===================== */
+    match /billing/{billId} {
+
+      allow read: if isAuth();
+
+      // ONLY backend (Cloud Functions) should create
+      allow create: if false;
+
+      // only finance can update (mark paid)
+      allow update: if isFinance();
+
+      allow delete: if false;
+    }
+
+    /* ===================== */
+    /* 💳 PAYMENTS */
+    /* ===================== */
+    match /payments/{paymentId} {
+
+      allow read: if isAuth();
+
+      // only finance can create
+      allow create: if isFinance();
+
+      allow update, delete: if false;
+    }
+
+    /* ===================== */
+    /* 👨‍💼 STAFF */
+    /* ===================== */
+    match /staff/{userId} {
+
+      // user can read own profile
+      allow read: if isAuth() && request.auth.uid == userId;
+
+      // admin can manage staff
+      allow write: if isAdmin();
+    }
+
+    /* ===================== */
+    /* 🍽 FOODS / DRINKS */
+    /* ===================== */
+    match /foods/{id} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    match /drinks/{id} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+    /* ===================== */
+    /* 🏨 ROOMS */
+    /* ===================== */
+    match /rooms/{id} {
+      allow read: if isAuth();
+      allow write: if isAdmin();
+    }
+
+  }
+}
