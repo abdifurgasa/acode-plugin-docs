@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;500;600&display=swap" rel="stylesheet">
+
+<style>
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family: 'Poppins', sans-serif;
+}
+
+/* LAYOUT */
+body{
+  display:flex;
+  background:#f5f6fa;
+}
+
+/* SIDEBAR */
+.sidebar{
+  width:250px;
+  height:100vh;
+  background:#1e272e;
+  color:white;
+  padding:20px;
+}
+
+.sidebar h2{
+  margin-bottom:30px;
+  color:#ffd32a;
+}
+
+.sidebar button{
+  width:100%;
+  padding:12px;
+  margin:8px 0;
+  border:none;
+  background:#2f3640;
+  color:white;
+  cursor:pointer;
+  border-radius:6px;
+  text-align:left;
+}
+
+.sidebar button:hover{
+  background:#485460;
+}
+
+/* MAIN */
+.main{
+  flex:1;
+  padding:20px;
+}
+
+/* HEADER */
+.header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:20px;
+}
+
+.header h1{
+  font-size:22px;
+}
+
+.logout{
+  background:red;
+  color:white;
+  border:none;
+  padding:10px 15px;
+  cursor:pointer;
+  border-radius:6px;
+}
+
+/* CARDS */
+.cards{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px,1fr));
+  gap:20px;
+  margin-bottom:20px;
+}
+
+.card{
+  background:white;
+  padding:20px;
+  border-radius:12px;
+  box-shadow:0 2px 5px rgba(0,0,0,0.1);
+}
+
+.card h3{
+  font-size:14px;
+  color:gray;
+}
+
+.card p{
+  font-size:22px;
+  font-weight:bold;
+}
+
+/* TABLE */
+.table{
+  background:white;
+  padding:20px;
+  border-radius:12px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th, td{
+  padding:10px;
+  border-bottom:1px solid #eee;
+  text-align:left;
+}
+
+th{
+  background:#f1f2f6;
+}
+
+/* STATUS COLORS */
+.status{
+  padding:5px 10px;
+  border-radius:6px;
+  color:white;
+}
+
+.pending{ background:orange; }
+.processing{ background:blue; }
+.done{ background:green; }
+
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <h2>🏨 Lelo Hotel</h2>
+
+  <button onclick="show('dashboard')">Dashboard</button>
+  <button onclick="show('rooms')">Rooms</button>
+  <button onclick="show('orders')">Orders</button>
+  <button onclick="show('staff')">Staff</button>
+  <button onclick="show('billing')">Billing</button>
+  <button onclick="show('finance')">Finance</button>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <div class="header">
+    <h1>Admin Dashboard</h1>
+    <button class="logout" onclick="logout()">Logout</button>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div id="dashboard" class="page">
+
+    <div class="cards">
+      <div class="card">
+        <h3>Total Rooms</h3>
+        <p id="totalRooms">0</p>
+      </div>
+
+      <div class="card">
+        <h3>Orders Today</h3>
+        <p id="totalOrders">0</p>
+      </div>
+
+      <div class="card">
+        <h3>Revenue</h3>
+        <p id="totalRevenue">0</p>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ORDERS -->
+  <div id="orders" class="page" style="display:none">
+
+    <div class="table">
+      <h3>Orders</h3>
+
+      <table>
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Type</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+
+        <tbody id="ordersTable"></tbody>
+      </table>
+    </div>
+
+  </div>
+
+</div>
+
+<!-- JS -->
+<script type="module">
+
+import { auth, db } from "./js/firebase.js";
+import { signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import {
+  collection,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+/* NAVIGATION */
+window.show = function(id){
+  document.querySelectorAll(".page").forEach(p=>p.style.display="none");
+  document.getElementById(id).style.display="block";
+}
+
+/* LOGOUT */
+window.logout = function(){
+  signOut(auth).then(()=> location.href="login.html");
+}
+
+/* LOAD ORDERS */
+onSnapshot(collection(db,"orders"), snap=>{
+
+  const table = document.getElementById("ordersTable");
+  table.innerHTML="";
+
+  let count=0;
+
+  snap.forEach(doc=>{
+    const d = doc.data();
+    count++;
+
+    table.innerHTML += `
+      <tr>
+        <td>${d.item}</td>
+        <td>${d.type}</td>
+        <td>
+          <span class="status ${d.status}">
+            ${d.status}
+          </span>
+        </td>
+      </tr>
+    `;
+  });
+
+  document.getElementById("totalOrders").innerText = count;
+
+});
+
+</script>
+
+</body>
+</html>
