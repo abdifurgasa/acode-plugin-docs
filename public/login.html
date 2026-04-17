@@ -1,1 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Login</title>
+</head>
+<body>
 
+<h2 data-i18n="login">Login</h2>
+
+<input id="email" placeholder="Email">
+<input id="password" placeholder="Password">
+
+<button onclick="login()">Login</button>
+
+<select id="lang">
+  <option value="en">EN</option>
+  <option value="am">AM</option>
+  <option value="om">OM</option>
+</select>
+
+<script type="module">
+import { loginUser } from "../js/core/auth.js";
+import { initLang, setLang } from "../js/core/i18n.js";
+
+window.login = async () => {
+  await loginUser(
+    document.getElementById("email").value,
+    document.getElementById("password").value
+  );
+};
+
+initLang();
+
+document.getElementById("lang").onchange = (e) => {
+  setLang(e.target.value);
+};
+</script>
+
+<script type="module" src="../js/app.js"></script>
+
+</body>
+</html>
